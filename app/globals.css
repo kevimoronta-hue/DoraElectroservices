@@ -1,0 +1,1553 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --nav-height: 72px;
+  --nav-height-scrolled: 69px;
+  --brand-logo-height: 58px;
+  --brand-logo-mobile-width: 174px;
+  --brand-logo-desktop-width: 199px;
+
+  /*
+   * Paleta "nv" (navbar/footer/burger/botones) — carbón profundo + rojo de
+   * marca. Deliberadamente separada de bg/surface/red-primary etc. de
+   * tailwind.config.ts (Hero, secciones, formulario): esos no cambian.
+   */
+  --nv-bg: #0d0d0f;
+  --nv-bg-rgb: 13, 13, 15;
+  --nv-footer-bg: #09090b;
+  --nv-text: #f2f2f2;
+  --nv-text-secondary: #9a9a9f;
+  --nv-border: #242428;
+  --nv-red: #e10613;
+  --nv-red-bright: #f10d18;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --nav-height: 80px;
+    --nav-height-scrolled: 77px;
+    --brand-logo-height: 66px;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  position: relative;
+  background-color: var(--nv-footer-bg);
+  color: #f5f3f2;
+}
+
+/*
+ * Global background — carbón base + reflets rouges très subtils, fixes
+ * (jamais `background-attachment: fixed`, qui repaint à chaque frame de
+ * scroll sur mobile Safari). Un `position: fixed` pseudo-élément composite
+ * une seule fois et reste indépendant du scroll — sans coût par frame.
+ * Statique, sans blur, sans animation. Les sections avec un fond opaque
+ * propre (bg-background-secondary) le recouvrent normalement : c'est
+ * voulu, le reflet ne doit pas être omniprésent.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--nv-footer-bg);
+  background-image: radial-gradient(700px 550px at 92% -6%, rgba(225, 6, 19, 0.09), transparent 62%),
+    radial-gradient(640px 520px at 4% 104%, rgba(241, 13, 24, 0.05), transparent 58%),
+    radial-gradient(140% 120% at 50% -10%, rgba(13, 13, 15, 0) 0%, rgba(9, 9, 11, 0.45) 100%);
+}
+
+@media (max-width: 767.98px) {
+  body::before {
+    background-image: radial-gradient(480px 400px at 92% -6%, rgba(225, 6, 19, 0.055), transparent 60%),
+      radial-gradient(440px 360px at 4% 104%, rgba(241, 13, 24, 0.03), transparent 55%),
+      radial-gradient(140% 120% at 50% -10%, rgba(13, 13, 15, 0) 0%, rgba(9, 9, 11, 0.4) 100%);
+  }
+}
+
+::selection {
+  background-color: #e02423;
+  color: #ffffff;
+}
+
+*:focus-visible {
+  outline: 3px solid rgba(248, 90, 78, 0.85);
+  outline-offset: 3px;
+}
+
+.container-page {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+@media (min-width: 768px) {
+  .container-page {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-page {
+    padding-inline: 48px;
+  }
+}
+
+/*
+ * Motion primitives — shared grammar for every entrance on the site (see
+ * lib/useInView.ts). Six families only: RISE, STAGGER GRID (RISE + --stagger-i),
+ * LINE DRAW, FOCUS-IN, SCALE MICRO, SECTION DEPTH SHIFT (bespoke per section,
+ * not a generic class). Never add a 7th family — reuse and retune these.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 450ms cubic-bezier(0.23, 1, 0.32, 1), transform 450ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* STAGGER GRID: pair with .reveal, set --stagger-i on each child (cap ~5). */
+.reveal[style*="--stagger-i"] {
+  transition-delay: calc(var(--stagger-i, 0) * 60ms);
+}
+
+/* SCALE MICRO: never below 0.98, never from 0. */
+.reveal-scale {
+  opacity: 0;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity 450ms cubic-bezier(0.23, 1, 0.32, 1), transform 450ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.reveal-scale.is-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* LINE DRAW: a rule/underline that constructs itself. */
+.line-draw {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 500ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.line-draw.is-in {
+  transform: scaleX(1);
+}
+
+/* FOCUS-IN: muted → full contrast, opacity/color only, never blur. */
+.focus-in {
+  opacity: 0.4;
+  transition: opacity 600ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.focus-in.is-in {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-scale,
+  .line-draw,
+  .focus-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/*
+ * ServiceCard — richer STAGGER GRID arrival (own transition list instead of
+ * the generic `.reveal`, since it must also carry the pre-existing hover
+ * transition on the same `transform`/`border-color` properties without the
+ * two declarations fighting over the shorthand).
+ */
+.service-card {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 450ms cubic-bezier(0.23, 1, 0.32, 1), transform 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.service-card.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.service-card:hover,
+.service-card:focus-within {
+  transform: translateY(-2px);
+  border-color: rgba(224, 36, 35, 0.45);
+  transition-duration: 200ms;
+}
+
+.service-card-icon {
+  transform: translateY(4px);
+  opacity: 0.7;
+  transition: transform 350ms cubic-bezier(0.23, 1, 0.32, 1) 60ms, opacity 350ms cubic-bezier(0.23, 1, 0.32, 1) 60ms;
+}
+
+.service-card.is-in .service-card-icon {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-card,
+  .service-card-icon {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+
+/* QuoteForm — functional feedback (higher priority than decorative entrance). */
+.toast-feedback {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.toast-feedback.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.quote-submit-label {
+  display: inline-block;
+  animation: quote-label-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/*
+ * "¿Qué necesitas?" chips — the whole `<label>` is the tactile surface
+ * (real checkbox nested inside, visually hidden but focusable). `:has()`
+ * drives the checked look straight off the native input, no JS mirror of
+ * form state needed just to paint a border.
+ */
+.needs-chip {
+  position: relative;
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--nv-border);
+  background: var(--nv-bg);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 150ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.needs-chip-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.needs-chip-label {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--nv-text);
+}
+
+.needs-chip-check {
+  flex: none;
+  color: var(--nv-red-bright);
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.needs-chip:has(.needs-chip-input:checked) {
+  border-color: var(--nv-red);
+  background: rgba(225, 6, 19, 0.08);
+}
+
+.needs-chip:has(.needs-chip-input:checked) .needs-chip-label {
+  color: #ffffff;
+}
+
+.needs-chip:has(.needs-chip-input:checked) .needs-chip-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.needs-chip:has(.needs-chip-input:focus-visible) {
+  outline: 3px solid rgba(241, 13, 24, 0.4);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .needs-chip:hover {
+    border-color: var(--nv-text-secondary);
+  }
+
+  .needs-chip:has(.needs-chip-input:checked):hover {
+    border-color: var(--nv-red-bright);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .needs-chip,
+  .needs-chip-check {
+    transition: none;
+  }
+}
+
+/*
+ * WhatsApp CTA — mobile only (per brief; desktop keeps PrimaryButton's
+ * existing 48px height and inline-flex centering untouched). A dedicated
+ * class instead of an arbitrary Tailwind height utility, so the override
+ * doesn't depend on utility declaration order winning against the base
+ * `h-12` already baked into PrimaryButton.
+ */
+.whatsapp-cta {
+  height: 56px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+@media (min-width: 640px) {
+  .whatsapp-cta {
+    height: 48px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+.whatsapp-cta-content {
+  display: grid;
+  grid-template-columns: 16px 1fr 16px;
+  align-items: center;
+  column-gap: 6px;
+  width: 100%;
+}
+
+.whatsapp-cta-content .whatsapp-cta-icon {
+  justify-self: start;
+}
+
+.whatsapp-cta-content .whatsapp-cta-label {
+  justify-self: center;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .whatsapp-cta-content {
+    display: inline-flex;
+    width: auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+@keyframes quote-label-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-feedback {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .quote-submit-label {
+    animation: none;
+  }
+}
+
+/* Navbar — Liquid Glass Premium (dark carbón) */
+.navbar-shell {
+  height: var(--nav-height);
+  transition: height 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navbar-shell[data-scrolled="true"] {
+  height: var(--nav-height-scrolled);
+}
+
+.navbar-glass {
+  background-color: rgba(var(--nv-bg-rgb), 0.94);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 42%);
+  /* Blur contenido a propósito (perf iOS validada): nunca subir de ~12px. */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 8px 22px rgba(0, 0, 0, 0.42);
+  transition: background-color 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.navbar-glass.is-scrolled {
+  background-color: rgba(var(--nv-bg-rgb), 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 10px 26px rgba(0, 0, 0, 0.5);
+  border-color: rgba(36, 36, 40, 0.9);
+}
+
+@supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+  .navbar-glass,
+  .navbar-glass.is-scrolled {
+    background: rgba(var(--nv-bg-rgb), 0.98);
+  }
+}
+
+/*
+ * Mobile navbar — "Premium Signature": below 1024px the bar becomes a
+ * detached surface (rounded bottom corners + a flat diffuse shadow that
+ * only appears once scrolled) instead of the desktop's backdrop-filter
+ * glass. No blur here on purpose — the depth comes from layered gradients,
+ * border and shadow alone, so it stays cheap on low/mid-end Android too.
+ */
+@media (max-width: 1023.98px) {
+  .navbar-glass {
+    background-color: rgba(var(--nv-bg-rgb), 0.97);
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 46%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 22%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--nv-border);
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+    transition: background-color 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+  }
+
+  .navbar-glass.is-scrolled {
+    background-color: rgba(var(--nv-bg-rgb), 0.99);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: rgba(36, 36, 40, 0.95);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+      0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.navbar-logo-link {
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+@media (max-width: 1023.98px) {
+  .navbar-logo-link {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+}
+
+/*
+ * Logo nativo, sin placa ni sombra: el PNG/WebP ya trae canal alfa real
+ * (verificado — esquinas y fondo totalmente transparentes, sin halo
+ * blanco/negro incrustado). Cualquier placa o drop-shadow encima lo hacía
+ * leer como "pegado" sobre un rectángulo en vez de integrado al fondo.
+ */
+.nav-logo-img {
+  display: block;
+  height: var(--brand-logo-height);
+  width: auto;
+  /*
+   * El preflight de Tailwind pone `img { max-width: 100% }`. Dentro de un
+   * link `position: absolute` con ancho automático (shrink-to-fit), ese
+   * 100% no tiene un contenedor definido del que partir — Chrome lo resolvía
+   * de forma circular y terminaba recortando el logo unos px por debajo de
+   * su ancho real (aspect-ratio correcto, pero achatado). max-width: none
+   * quita esa dependencia; el tamaño ya lo fija height + aspect-ratio.
+   */
+  max-width: none;
+  object-fit: contain;
+}
+
+.nav-link {
+  color: var(--nv-text-secondary);
+  transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  .nav-link:hover {
+    color: var(--nv-text);
+  }
+}
+
+.nav-link:active {
+  color: var(--nv-text);
+}
+
+.nav-link.is-active {
+  color: var(--nv-text);
+}
+
+/* Small, fine detail — not a full-width underline. */
+.nav-link-dot {
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--nv-red);
+  opacity: 0;
+  transform: translateX(-50%) scale(0.5);
+  transition: opacity 250ms cubic-bezier(0.23, 1, 0.32, 1), transform 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.nav-link.is-active .nav-link-dot {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link-dot {
+    transition: none;
+  }
+}
+
+.nav-cta {
+  background: var(--nv-red);
+  color: var(--nv-text);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(225, 6, 19, 0.28);
+  transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  .nav-cta:hover {
+    background: var(--nv-red-bright);
+  }
+}
+
+.nav-cta:active {
+  transform: scale(0.97);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(225, 6, 19, 0.22);
+}
+
+.nav-cta:focus-visible {
+  outline: 3px solid rgba(241, 13, 24, 0.35);
+  outline-offset: 3px;
+}
+
+.nav-burger {
+  position: relative;
+  overflow: hidden;
+  color: var(--nv-text);
+  border-color: var(--nv-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.12) 100%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 150ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Micro-reflet ponctuel du tap — position fixe, jamais lié au point de contact réel (pas de tracking JS). */
+.nav-burger::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 65%);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.nav-burger:active::before {
+  opacity: 1;
+}
+
+.nav-burger:focus-visible {
+  outline: 3px solid rgba(241, 13, 24, 0.4);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .nav-burger:hover {
+    border-color: var(--nv-text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/*
+ * Press: la surface "s'enfonce" — le gradient s'inverse (sombre en haut,
+ * clair en bas) au lieu de simplement s'assombrir en aplat.
+ */
+.nav-burger:active {
+  transform: scale(0.96);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.05) 100%),
+    rgba(255, 255, 255, 0.06);
+  border-color: var(--nv-text-secondary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/*
+ * Estado abierto: liseré rouge fin uniquement sur le bord inférieur (pas un
+ * anneau complet) — signature discrète, jamais un glow.
+ */
+.nav-burger[data-open="true"] {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.12) 100%),
+    rgba(225, 6, 19, 0.1);
+  border-color: rgba(225, 6, 19, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -2px 0 rgba(225, 6, 19, 0.5);
+}
+
+@media (hover: hover) {
+  .nav-burger[data-open="true"]:hover {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.12) 100%),
+      rgba(225, 6, 19, 0.14);
+    border-color: rgba(225, 6, 19, 0.55);
+  }
+}
+
+.nav-burger[data-open="true"]:active {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.05) 100%),
+    rgba(225, 6, 19, 0.16);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 -2px 0 rgba(225, 6, 19, 0.6);
+}
+
+/*
+ * Burger → X, sobrio: 3 barras absolutas dentro de una caja fija; sólo
+ * `transform`/`opacity`, nunca `top`/`left` animados. 45°/-45° es la
+ * rotación mínima que forma la X — no hay "menos" que siga leyéndose
+ * como una X, así que no es una rotación exagerada.
+ */
+.nav-burger-icon {
+  position: relative;
+  height: 15px;
+  width: 20px;
+}
+
+.nav-burger-bar {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms ease;
+}
+
+.nav-burger-bar:nth-child(1) {
+  top: 0;
+}
+
+.nav-burger-bar:nth-child(2) {
+  top: 6.5px;
+}
+
+.nav-burger-bar:nth-child(3) {
+  top: 13px;
+}
+
+.nav-burger[data-open="true"] .nav-burger-bar:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+}
+
+.nav-burger[data-open="true"] .nav-burger-bar:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.nav-burger[data-open="true"] .nav-burger-bar:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-burger-bar {
+    transition: none;
+  }
+}
+
+/*
+ * Panel — a short dropdown docked under the navbar (not a full-height
+ * takeover): height = content, floats a few px below the navbar with a
+ * small inset so it reads as "the navbar unfolding" rather than a modal.
+ * Enter ~300ms (opacity + short translateY + a hair of scale), exit
+ * faster ~200ms. MobileMenu keeps it mounted for CLOSE_MS after `open`
+ * goes false so this exit transition gets to finish instead of being cut
+ * by an immediate unmount.
+ */
+.mobile-panel {
+  background: rgba(var(--nv-bg-rgb), 0.97);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 16%);
+  color: var(--nv-text);
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 16px 32px rgba(0, 0, 0, 0.42);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.985);
+  transform-origin: top center;
+  transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1), transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-panel[data-state="open"] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.mobile-panel[data-state="closed"] {
+  transition-duration: 200ms;
+  transform: translateY(-6px) scale(0.99);
+}
+
+.mobile-panel-item {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-panel[data-state="open"] .mobile-panel-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mobile-panel[data-state="closed"] .mobile-panel-item {
+  transition: opacity 110ms ease, transform 110ms ease;
+}
+
+.mobile-panel-link {
+  position: relative;
+  color: var(--nv-text);
+  transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  .mobile-panel-link:hover {
+    color: var(--nv-red-bright);
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.mobile-panel-link:active {
+  background: rgba(225, 6, 19, 0.1);
+  color: var(--nv-red-bright);
+}
+
+/* Small, discreet accent — mirrors .nav-link-dot's restraint, not a full underline. */
+.mobile-panel-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 16px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--nv-red);
+  opacity: 0;
+  transform: translateY(-50%) scaleY(0.4);
+  transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-panel-link:active::before {
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
+}
+
+@media (hover: hover) {
+  .mobile-panel-link:hover::before {
+    opacity: 0.6;
+    transform: translateY(-50%) scaleY(1);
+  }
+}
+
+/*
+ * Scrim — decorative dimming only, never a hit-testable overlay: the page
+ * must stay fully scrollable and clickable while the panel is open, so
+ * `pointer-events: none` is load-bearing here, not incidental. No blur:
+ * dimming alone reads as "the panel is in front" without the extra
+ * compositing cost of a backdrop-filter under a fixed-position layer.
+ */
+.mobile-scrim {
+  pointer-events: none;
+  background: rgba(5, 5, 6, 0.4);
+  opacity: 0;
+  transition: opacity 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-scrim[data-state="open"] {
+  opacity: 1;
+}
+
+.mobile-scrim[data-state="closed"] {
+  transition-duration: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-panel,
+  .mobile-panel-item,
+  .mobile-scrim {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Footer — carbón profundo */
+.footer-chrome {
+  position: relative;
+  background: linear-gradient(180deg, var(--nv-footer-bg) 0%, #060607 100%);
+  color: var(--nv-text);
+}
+
+.footer-chrome::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(150, 150, 155, 0.35),
+    rgba(225, 6, 19, 0.65),
+    rgba(150, 150, 155, 0.35),
+    transparent
+  );
+  transform: scaleX(0);
+  transition: transform 700ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.footer-chrome.is-in::before {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-chrome::before {
+    transform: scaleX(1);
+    transition: none;
+  }
+}
+
+.footer-logo-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.footer-logo-img {
+  display: block;
+  height: auto;
+  max-height: none;
+  max-width: none;
+  object-fit: contain;
+  width: var(--brand-logo-mobile-width);
+}
+
+@media (min-width: 1024px) {
+  .footer-logo-img {
+    width: var(--brand-logo-desktop-width);
+  }
+}
+
+.footer-text-secondary {
+  color: var(--nv-text-secondary);
+}
+
+.footer-text-muted {
+  color: var(--nv-text-secondary);
+}
+
+.footer-link {
+  color: var(--nv-text-secondary);
+  transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  .footer-link:hover {
+    color: var(--nv-red);
+  }
+}
+
+.footer-link:active {
+  color: var(--nv-red-bright);
+}
+
+.footer-border {
+  border-color: var(--nv-border);
+}
+
+/* A quiet dot between the address/phone/hours trio — not a full pipe divider. */
+.footer-divider {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .footer-divider {
+    display: inline-block;
+    height: 3px;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--nv-border);
+  }
+}
+
+.footer-hours-pill {
+  border: 1px solid rgba(225, 6, 19, 0.35);
+  background: rgba(225, 6, 19, 0.08);
+  color: var(--nv-red-bright);
+}
+
+/*
+ * Hero — full-bleed 9:16 video background. `.hero-shell` reserves the real
+ * safe area under the sticky navbar via `--nav-height` (never a magic
+ * padding-top): the video itself is allowed to run behind the navbar
+ * (glass, already translucent) for depth, but `.hero-content` starts
+ * exactly at the navbar's bottom edge so no text/button is ever covered.
+ * `100svh` (not `100vh`) sidesteps the classic iOS Safari address-bar
+ * resize bug; desktop is capped instead of going full height so a wide
+ * short viewport doesn't turn the video into a heavily cropped sliver.
+ */
+.hero-shell {
+  min-height: 100svh;
+}
+
+@media (min-width: 1024px) {
+  .hero-shell {
+    min-height: min(88vh, 860px);
+    height: min(88vh, 860px);
+  }
+}
+
+.hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-video,
+.hero-poster-fallback {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-poster-fallback {
+  display: none;
+}
+
+/*
+ * Local scrim only, not a full-frame filter: dark behind the
+ * headline/proof stack, fading to fully transparent well before the
+ * video's own logo moment (~39% down the frame — see
+ * `.hero-logo-clearance`) so that reveal stays bright and unfiltered.
+ * Desktop keeps its original, later fade-out (58%): the compact stack
+ * there sits higher and doesn't have a logo-clearance zone to protect.
+ */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0.62) 0%, rgba(9, 9, 11, 0.32) 16%, rgba(9, 9, 11, 0) 32%);
+}
+
+@media (min-width: 1024px) {
+  .hero-scrim {
+    background: linear-gradient(180deg, rgba(9, 9, 11, 0.62) 0%, rgba(9, 9, 11, 0.34) 32%, rgba(9, 9, 11, 0) 58%);
+  }
+}
+
+/*
+ * Mobile: `.hero-content` fills the shell exactly (absolute, not normal
+ * flow) so its flex column can distribute real space with
+ * `.hero-logo-clearance` rather than guessing a top offset — headline+proof
+ * pinned top, CTAs pinned bottom, whatever's left in between is the video's
+ * to keep. Desktop reverts to the original compact, top-packed stack
+ * (nothing pushed to the bottom, no clearance zone).
+ *
+ * `padding-top` is a plain breathing-room value, not `--nav-height` again:
+ * the navbar is `position: sticky`, which still occupies its own space in
+ * normal flow, so `.hero-shell` (and this absolutely-positioned content
+ * layer covering it) already starts right at the navbar's bottom edge —
+ * adding `--nav-height` a second time here was pushing the whole stack
+ * down by an extra 72-80px for nothing, which is what left too little
+ * room at the bottom on short phones.
+ */
+.hero-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: clamp(16px, 3svh, 28px);
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 1024px) {
+  .hero-content {
+    position: relative;
+    inset: auto;
+    padding-top: calc(var(--nav-height) + 64px);
+    padding-bottom: 64px;
+  }
+}
+
+/*
+ * Fixed-ish size (not `flex: 1` growing to fill whatever's left) —
+ * flex:1 was consuming *all* remaining space down to the bottom padding,
+ * which shoved the CTA row all the way to the bottom edge instead of
+ * just past the logo. This reserves only enough room to clear the
+ * ~39-50% logo band with margin; the CTA row follows right after it,
+ * landing mid-lower in the hero instead of pinned at the very bottom.
+ */
+.hero-logo-clearance {
+  flex: 0 0 auto;
+  height: clamp(110px, 28svh, 260px);
+}
+
+@media (min-width: 1024px) {
+  .hero-logo-clearance {
+    display: none;
+  }
+}
+
+/*
+ * Mobile CTA row: forced onto one line, side by side, instead of the
+ * `flex-wrap` that let "Conocer las soluciones" drop to a second row and
+ * double the row's height — that extra height was exactly what pushed the
+ * whole row up over the video's logo moment (a shorter row, still bottom-
+ * anchored by `.hero-content`'s own padding-bottom, sits lower — its top
+ * edge moves down as its height shrinks). `min-width: 0` is load-bearing:
+ * without it a flex item won't shrink past its text's natural width and
+ * the row would overflow instead of the buttons compressing. Desktop
+ * restores the exact original two-button row (wrap allowed, full size).
+ */
+.hero-cta-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: clamp(5px, 2vw, 14px);
+}
+
+.hero-cta-row > a {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: clamp(4px, 3vw, 16px);
+  font-size: clamp(10.5px, 3.3vw, 14px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 1024px) {
+  .hero-cta-row {
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .hero-cta-row > a {
+    flex: none;
+    min-width: auto;
+    padding-inline: 24px;
+    font-size: 15px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+/* "35 / años de experiencia" — a credibility mark, not a lost caption line. */
+.hero-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  border-radius: 12px;
+  border: 1px solid var(--nv-border);
+  background: rgba(var(--nv-bg-rgb), 0.55);
+  padding: 10px 18px 10px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+  .hero-proof {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+}
+
+.hero-proof-number {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--nv-red-bright);
+}
+
+.hero-proof-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--nv-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video {
+    display: none;
+  }
+
+  .hero-poster-fallback {
+    display: block;
+  }
+}
+
+/*
+ * Process — plain vertical timeline. The axis is two stacked layers
+ * sharing the same JS-measured box (see ProcessTimeline.tsx: `centers[i]`
+ * is badge i's real getBoundingClientRect center, so `top`/`height` here
+ * are always exactly first-badge-center to last-badge-center — never a
+ * CSS guess): a static base line (`--nv-border`, always fully drawn) and
+ * `.process-progress-axis`, a single red line over it that reveals via
+ * `scaleY(progress)` from `transform-origin: top`. `progress` is
+ * `(centers[activeIndex] - centers[0]) / axisHeight` — a plain ratio of
+ * real positions, so it's exactly as valid scrolling up as scrolling
+ * down, and jumping straight to a new `activeIndex` (fast scroll) just
+ * animates to that ratio instead of replaying intermediate steps. Each
+ * step's number lives on the axis itself, inside `.process-badge` — never
+ * duplicated in the body copy.
+ */
+:root {
+  --process-row-gap: 56px;
+  --process-badge-size: 36px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --process-row-gap: 96px;
+    --process-badge-size: 44px;
+  }
+}
+
+.process-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--process-row-gap);
+}
+
+.process-baseline,
+.process-progress-axis {
+  position: absolute;
+  left: calc(16px + var(--process-badge-size) / 2);
+  width: 1.5px;
+}
+
+@media (min-width: 768px) {
+  .process-baseline,
+  .process-progress-axis {
+    left: calc(32px + var(--process-badge-size) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .process-baseline,
+  .process-progress-axis {
+    left: calc(48px + var(--process-badge-size) / 2);
+  }
+}
+
+.process-baseline {
+  background: var(--nv-border);
+}
+
+.process-progress-axis {
+  background: var(--nv-red);
+  transform-origin: top;
+  transition: transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.process-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--process-badge-size) 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 1024px) {
+  .process-row {
+    gap: 32px;
+  }
+}
+
+.process-row-gutter {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+@media (min-width: 1024px) {
+  .process-row-gutter {
+    /*
+     * Desktop centers `.process-row-body` against the taller image via
+     * `.process-row-main`'s own `align-items: center` — centering the
+     * badge inside this same full-row-height gutter lines its middle up
+     * with that already-centered text block instead of the image top.
+     */
+    align-items: center;
+    padding-top: 0;
+  }
+}
+
+.process-badge {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--process-badge-size);
+  width: var(--process-badge-size);
+  flex: none;
+  border-radius: 999px;
+  border: 1.5px solid var(--nv-border);
+  background: var(--nv-bg);
+  transform: scale(0.9);
+  transition: transform 400ms cubic-bezier(0.23, 1, 0.32, 1), border-color 400ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 400ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 400ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.process-badge-number {
+  font-family: var(--font-barlow), "Arial Narrow", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--nv-text-secondary);
+  transition: color 400ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (min-width: 1024px) {
+  .process-badge-number {
+    font-size: 14px;
+  }
+}
+
+.process-badge.is-in {
+  transform: scale(1);
+  border-color: rgba(225, 6, 19, 0.5);
+  background: rgba(225, 6, 19, 0.08);
+}
+
+.process-badge.is-in .process-badge-number {
+  color: var(--nv-text);
+}
+
+.process-row[data-state="active"] .process-badge.is-in {
+  border-color: var(--nv-red);
+  background: rgba(225, 6, 19, 0.14);
+  box-shadow: 0 0 0 5px rgba(225, 6, 19, 0.14);
+}
+
+.process-row[data-state="active"] .process-badge.is-in .process-badge-number {
+  color: var(--nv-red-bright);
+}
+
+.process-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .process-row-main {
+    flex-direction: row;
+    align-items: center;
+    gap: 56px;
+  }
+}
+
+.process-row-body {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .process-row-body {
+    flex: 1 1 0;
+  }
+}
+
+/*
+ * Signature move: each photo unmasks like a shutter opening, in the
+ * direction away from the axis — left-to-right for rows with the image
+ * on the right, mirrored (`--rtl`) for the alternating rows where the
+ * image sits on the left — instead of a plain fade/scale. Single
+ * `transition` property (not opacity + clip-path) so the inline
+ * transition-delay ProcessTimeline sets for sequencing (line/badge →
+ * image → text) applies cleanly to the one thing that's animating.
+ */
+.process-row-media {
+  flex: none;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--nv-border);
+  max-width: 360px;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 720ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.process-row-media.is-in {
+  clip-path: inset(0 0 0 0);
+}
+
+.process-row-media--rtl {
+  clip-path: inset(0 0 0 100%);
+}
+
+.process-row-media--rtl.is-in {
+  clip-path: inset(0 0 0 0);
+}
+
+@media (min-width: 1024px) {
+  .process-row-media {
+    flex: 1 1 0;
+    max-width: 440px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .process-progress-axis {
+    transition: none;
+  }
+
+  .process-badge,
+  .process-badge-number {
+    transition: none;
+  }
+
+  .process-row-media,
+  .process-row-media--rtl {
+    transition: none;
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/*
+ * Testimonials — double cross-marquee. `.marquee-track` renders the source
+ * items twice (see MarqueeRow.tsx), so `translateX(-50%)` is exactly one
+ * full set wide: looping the keyframe back to 0% never shows a seam. Row 1
+ * runs left, row 2 right, at slightly different durations (40s / 46s) so
+ * the two never feel mechanically synced. Autoplay pause on hover is pure
+ * CSS; drag/swipe takes over via a small amount of pointer-event JS (see
+ * the component) that only runs when the user actually touches a row.
+ */
+.testimonials-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.marquee-row {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    black 40px,
+    black calc(100% - 40px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(90deg, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  padding-inline: 16px;
+  touch-action: pan-y;
+  cursor: grab;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+  /*
+   * Without these, a mouse-down-drag over the quote text starts a native
+   * text selection that visually fights the transform-driven drag (the
+   * "sensation de lutte" symptom), and a touch long-press shows the
+   * mobile text-selection/callout menu instead of just dragging.
+   */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.marquee-track:active {
+  cursor: grabbing;
+}
+
+/* Permanent, applied the instant a user drags: autoplay never resumes and
+   fights the pointer that's now driving the transform directly. */
+.marquee-track--manual {
+  animation: none;
+}
+
+@media (hover: hover) {
+  .marquee-row:hover .marquee-track:not(.marquee-track--manual) {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-right {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.testimonial-card {
+  background: var(--nv-bg);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 24%);
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 30px rgba(0, 0, 0, 0.32);
+}
+
+.testimonial-avatar {
+  border: 1.5px solid rgba(225, 6, 19, 0.4);
+  box-shadow: 0 0 0 3px rgba(225, 6, 19, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+  }
+}
+
+/*
+ * WhatsApp FAB — global, mounted once in app/layout.tsx. Positioned with
+ * real margin (never flush against an edge) and layered below the navbar
+ * stack (z-20 vs. navbar's 50 / mobile panel's 40 / mobile scrim's 30) so
+ * an open burger menu visually wins over it. `env(safe-area-inset-bottom)`
+ * keeps it clear of the iOS home indicator on notched phones.
+ */
+.whatsapp-fab {
+  position: fixed;
+  z-index: 20;
+  right: 20px;
+  bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  height: 56px;
+  width: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: var(--nv-red);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 24px rgba(225, 6, 19, 0.32);
+  transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1), transform 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (min-width: 1024px) {
+  .whatsapp-fab {
+    right: 32px;
+    bottom: 32px;
+  }
+}
+
+@media (hover: hover) {
+  .whatsapp-fab:hover {
+    background: var(--nv-red-bright);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(225, 6, 19, 0.4);
+  }
+}
+
+.whatsapp-fab:active {
+  transform: scale(0.96);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(225, 6, 19, 0.26);
+}
+
+.whatsapp-fab:focus-visible {
+  outline: 3px solid rgba(241, 13, 24, 0.5);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-fab {
+    transition: none;
+  }
+
+  .whatsapp-fab:active {
+    transform: none;
+  }
+}
+
+/* LocationSection — contact rows + embedded map widget. */
+.location-contact-row {
+  width: fit-content;
+  transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) {
+  a.location-contact-row:hover {
+    color: var(--nv-red-bright);
+  }
+}
+
+.location-map {
+  position: relative;
+  min-height: 280px;
+  background: var(--nv-bg);
+}
+
+.location-map iframe {
+  border: 0;
+  display: block;
+  filter: grayscale(0.15) contrast(1.05);
+}
