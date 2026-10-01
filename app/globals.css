@@ -1420,8 +1420,9 @@ body::before {
   cursor: grabbing;
 }
 
-/* Permanent, applied the instant a user drags: autoplay never resumes and
-   fights the pointer that's now driving the transform directly. */
+/* While set, JS owns `transform` and the keyframes are off, so autoplay
+   never fights the pointer. Permanent after a mouse drag; on touch it's
+   removed 1s after release (MarqueeRow resumes via animation-delay). */
 .marquee-track--manual {
   animation: none;
 }

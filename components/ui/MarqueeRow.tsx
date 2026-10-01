@@ -12,6 +12,7 @@ interface MarqueeRowProps {
 }
 
 const INTENT_THRESHOLD_PX = 6;
+const TOUCH_RESUME_DELAY_MS = 1000;
 
 /**
  * Continuous cross-scrolling testimonial row.
@@ -40,12 +41,20 @@ const INTENT_THRESHOLD_PX = 6;
  * why `user-select: none` is on `.marquee-track` in CSS: without it, a
  * mouse-down-and-drag over the quote text starts a native text selection
  * that visually fights the transform-driven drag.
+ *
+ * Touch (mobile) is a separate, temporary mode: the row pauses on finger
+ * down, follows the finger 1:1, and 1s after release hands control back to
+ * the CSS animation with a negative `animation-delay` computed from the
+ * current offset — so it resumes from exactly where it was, no jump. All
+ * state is per-instance refs, so touching one row never affects the other.
  */
 export function MarqueeRow({ items, direction, durationSeconds, ariaLabel }: MarqueeRowProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const momentumFrame = useRef<number | null>(null);
+  const resumeTimer = useRef<number | null>(null);
   const state = useRef({
     intent: "pending" as "pending" | "horizontal" | "vertical",
+    touch: false,
     manual: false,
     offset: 0,
     setWidth: 0,
@@ -99,10 +108,39 @@ export function MarqueeRow({ items, direction, durationSeconds, ariaLabel }: Mar
         const parts = match[1].split(",").map((n) => parseFloat(n));
         currentX = parts[4] ?? 0;
       }
-      s.offset = currentX;
+      s.offset = wrap(currentX);
       s.manual = true;
       track.classList.add("marquee-track--manual");
-      track.style.transform = `translateX(${currentX}px)`;
+      // Inline name beats the class's `animation: none`, so the stop has to
+      // happen inline too — and it lets resume restart the keyframes cleanly.
+      track.style.animationName = "none";
+      track.style.transform = `translateX(${s.offset}px)`;
+    }
+
+    function clearResume() {
+      if (resumeTimer.current !== null) {
+        window.clearTimeout(resumeTimer.current);
+        resumeTimer.current = null;
+      }
+    }
+
+    // Hand position back to the CSS loop: a negative delay starts the
+    // keyframes at the progress matching the current offset, so autoplay
+    // continues from here in this row's own direction instead of resetting.
+    function resumeAutoplay() {
+      resumeTimer.current = null;
+      if (!track || s.pointerId !== -1) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const w = s.setWidth;
+      if (w <= 0) return;
+      const progress = direction === "left" ? -s.offset / w : 1 + s.offset / w;
+      track.style.transform = "";
+      track.classList.remove("marquee-track--manual");
+      // Name going none → keyframes starts a fresh animation at "now"; the
+      // negative delay then places it at the current offset.
+      track.style.animationDelay = `${-progress * durationSeconds}s`;
+      track.style.animationName = direction === "left" ? "marquee-left" : "marquee-right";
+      s.manual = false;
     }
 
     // Reset only the per-gesture bookkeeping — not `s.manual`/`s.offset`,
@@ -116,12 +154,21 @@ export function MarqueeRow({ items, direction, durationSeconds, ariaLabel }: Mar
       if (!track || s.pointerId !== -1) return; // ignore a second simultaneous pointer
       stopMomentum();
       s.intent = "pending";
+      s.touch = event.pointerType === "touch";
       s.pointerId = event.pointerId;
       s.startClientX = event.clientX;
       s.startClientY = event.clientY;
       s.lastClientX = event.clientX;
       s.lastT = performance.now();
       s.velocity = 0;
+      if (s.touch) {
+        // Touch pauses this row immediately; a pending resume from a
+        // previous release is dropped so timers never stack.
+        clearResume();
+        goManual();
+        s.startOffset = s.offset;
+        return;
+      }
       // Deliberately no setPointerCapture / preventDefault / goManual yet:
       // we don't know if this is a horizontal swipe or a vertical page
       // scroll that happens to start over a card.
@@ -175,6 +222,13 @@ export function MarqueeRow({ items, direction, durationSeconds, ariaLabel }: Mar
         }
       }
       resetGesture();
+      if (s.touch) {
+        // No momentum on touch: the row stays exactly where the finger left
+        // it, then autoplay picks up from there after the hold.
+        clearResume();
+        resumeTimer.current = window.setTimeout(resumeAutoplay, TOUCH_RESUME_DELAY_MS);
+        return;
+      }
       if (!wasHorizontal || !track) return;
 
       let velocity = s.velocity; // px/ms
@@ -205,8 +259,9 @@ export function MarqueeRow({ items, direction, durationSeconds, ariaLabel }: Mar
       track.removeEventListener("pointerup", endDrag);
       track.removeEventListener("pointercancel", endDrag);
       stopMomentum();
+      clearResume();
     };
-  }, []);
+  }, [direction, durationSeconds]);
 
   const doubled = [...items, ...items];
 
