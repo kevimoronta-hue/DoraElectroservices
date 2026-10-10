@@ -7,7 +7,7 @@ export function CommitmentsSection() {
     <section className="bg-background-secondary py-[72px] lg:py-28">
       <div className="container-page">
         <SectionHeading title="Una forma de trabajar basada en experiencia y claridad" />
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {COMMITMENTS.map((commitment, index) => (
             <CommitmentCard key={commitment.title} commitment={commitment} index={index} />
           ))}

@@ -52,42 +52,42 @@ export const SERVICES: Service[] = [
     id: "instalaciones-electricas",
     title: "Instalaciones eléctricas",
     description: "Instalaciones adaptadas a las condiciones y necesidades del proyecto.",
-    icon: "bolt",
     image: "/images/service-instalaciones-electricas.jpg",
   },
   {
     id: "mantenimiento-electromecanico",
     title: "Mantenimiento electromecánico",
     description: "Seguimiento periódico orientado a preservar el funcionamiento de la instalación.",
-    icon: "wrench",
     image: "/images/service-mantenimiento-electromecanico.jpg",
+  },
+  {
+    id: "reparaciones-plantas-electricas",
+    title: "Reparaciones de plantas eléctricas",
+    description: "Diagnóstico, revisión y reparación de plantas eléctricas para recuperar un funcionamiento seguro y confiable.",
+    image: "/images/service-reparaciones-plantas.jpg",
   },
   {
     id: "diagnostico-fallas",
     title: "Diagnóstico de fallas",
     description: "Evaluación técnica para identificar el origen de un problema puntual.",
-    icon: "search",
     image: "/images/service-diagnostico-fallas.jpg",
   },
   {
     id: "reparacion-adecuacion",
     title: "Reparación y adecuación",
     description: "Intervenciones dirigidas a corregir o ajustar una instalación existente.",
-    icon: "tool",
     image: "/images/service-reparacion-adecuacion.jpg",
   },
   {
     id: "control-automatizacion",
     title: "Control y automatización",
     description: "Soluciones orientadas a mejorar el control de procesos electromecánicos.",
-    icon: "cpu",
     image: "/images/service-control-automatizacion.jpg",
   },
   {
     id: "soluciones-personalizadas",
     title: "Soluciones personalizadas",
     description: "Propuestas específicas cuando el proyecto no encaja en una categoría estándar.",
-    icon: "clipboard",
     image: "/images/service-soluciones-personalizadas.jpg",
   },
 ];
@@ -123,18 +123,22 @@ export const COMMITMENTS: Commitment[] = [
   {
     title: "Experiencia",
     text: "Treinta y cinco años de experiencia aplicados al análisis de cada proyecto.",
+    image: "/images/commitment-experiencia.jpg",
   },
   {
     title: "Claridad",
     text: "Explicaciones directas para que el cliente comprenda la solución propuesta.",
+    image: "/images/commitment-claridad.jpg",
   },
   {
     title: "Responsabilidad",
     text: "Seguimiento del trabajo acordado y atención a los detalles de la instalación.",
+    image: "/images/commitment-responsabilidad.jpg",
   },
   {
     title: "Solución adaptada",
     text: "Cada recomendación debe responder a las condiciones reales del proyecto.",
+    image: "/images/commitment-solucion-adaptada.jpg",
   },
 ];
 

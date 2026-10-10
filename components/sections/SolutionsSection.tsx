@@ -10,9 +10,14 @@ export function SolutionsSection() {
           title="Soluciones adaptadas a cada necesidad"
           description="Cada instalación presenta condiciones diferentes. Evaluamos el contexto técnico antes de recomendar una intervención."
         />
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        <div className="mt-10 grid gap-x-5 gap-y-8 md:grid-cols-2 lg:grid-cols-3">
           {SERVICES.map((service, index) => (
-            <ServiceCard key={service.id} service={service} index={index} />
+            <ServiceCard
+              key={service.id}
+              service={service}
+              index={index}
+              featured={SERVICES.length % 2 === 1 && index === SERVICES.length - 1}
+            />
           ))}
         </div>
       </div>

@@ -2,7 +2,6 @@ export interface Service {
   id: string;
   title: string;
   description: string;
-  icon: string;
   image: string;
 }
 
@@ -16,6 +15,7 @@ export interface ProcessStepData {
 export interface Commitment {
   title: string;
   text: string;
+  image: string;
 }
 
 export interface Testimonial {

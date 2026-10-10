@@ -180,16 +180,14 @@ body::before {
 }
 
 /*
- * ServiceCard — richer STAGGER GRID arrival (own transition list instead of
- * the generic `.reveal`, since it must also carry the pre-existing hover
- * transition on the same `transform`/`border-color` properties without the
- * two declarations fighting over the shorthand).
+ * ServiceCard — photo on top, an editorial panel overlapping its lower edge.
+ * The panel sits on the generated graphite texture under a dark scrim so
+ * text contrast never depends on the texture itself.
  */
 .service-card {
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 450ms cubic-bezier(0.23, 1, 0.32, 1), transform 450ms cubic-bezier(0.23, 1, 0.32, 1),
-    border-color 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: opacity 450ms cubic-bezier(0.23, 1, 0.32, 1), transform 450ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .service-card.is-in {
@@ -197,29 +195,125 @@ body::before {
   transform: translateY(0);
 }
 
-.service-card:hover,
-.service-card:focus-within {
-  transform: translateY(-2px);
-  border-color: rgba(224, 36, 35, 0.45);
-  transition-duration: 200ms;
+.service-card-media {
+  border: 1px solid var(--nv-border);
+  background: var(--nv-bg);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
 }
 
-.service-card-icon {
-  transform: translateY(4px);
-  opacity: 0.7;
-  transition: transform 350ms cubic-bezier(0.23, 1, 0.32, 1) 60ms, opacity 350ms cubic-bezier(0.23, 1, 0.32, 1) 60ms;
+.service-card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(9, 9, 11, 0) 45%, rgba(9, 9, 11, 0.6) 100%);
 }
 
-.service-card.is-in .service-card-icon {
-  transform: translateY(0);
-  opacity: 1;
+.service-card-img {
+  transition: transform 700ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.service-card-panel {
+  background-color: var(--nv-bg);
+  background-image: linear-gradient(180deg, rgba(13, 13, 15, 0.5) 0%, rgba(13, 13, 15, 0.86) 100%),
+    url("/images/texture-graphite.jpg");
+  background-size: cover;
+  background-position: center top;
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 22px 44px rgba(0, 0, 0, 0.45);
+  transition: border-color 250ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.service-card-index {
+  color: var(--nv-red-bright);
+  letter-spacing: 0.06em;
+}
+
+.service-card-rule {
+  background: linear-gradient(90deg, rgba(225, 6, 19, 0.55), rgba(36, 36, 40, 0.9) 35%, rgba(36, 36, 40, 0));
+}
+
+.service-card-cta {
+  color: var(--nv-text);
+  transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.service-card-cta svg {
+  color: var(--nv-red-bright);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.service-card:focus-within .service-card-panel {
+  border-color: rgba(225, 6, 19, 0.45);
+}
+
+@media (hover: hover) {
+  .service-card:hover .service-card-img {
+    transform: scale(1.04);
+  }
+
+  .service-card:hover .service-card-panel {
+    border-color: rgba(225, 6, 19, 0.45);
+  }
+
+  .service-card-cta:hover {
+    color: var(--nv-red-bright);
+  }
+
+  .service-card-cta:hover svg {
+    transform: translateX(3px);
+  }
+}
+
+/* "Una forma de trabajar…" — photo-led cards with an editorial index. */
+.commitment-card {
+  background-color: var(--nv-bg);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0) 40%);
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.commitment-card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(13, 13, 15, 0) 50%, var(--nv-bg) 100%);
+}
+
+.commitment-card-img {
+  transition: transform 700ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.commitment-card-index {
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--nv-text);
+  letter-spacing: 0.08em;
+  background: rgba(13, 13, 15, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.commitment-card-rule {
+  background: var(--nv-red);
+}
+
+@media (hover: hover) {
+  .commitment-card:hover .commitment-card-img {
+    transform: scale(1.04);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .service-card,
-  .service-card-icon {
+  .service-card {
     opacity: 1;
     transform: none;
+    transition: none;
+  }
+
+  .service-card-img,
+  .commitment-card-img {
     transition: none;
   }
 }
@@ -1378,7 +1472,7 @@ body::before {
 .testimonials-rows {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 4px;
 }
 
 .marquee-row {
@@ -1400,6 +1494,8 @@ body::before {
   width: max-content;
   gap: 16px;
   padding-inline: 16px;
+  /* Room for the cards' drop shadow, which .marquee-row's overflow would clip. */
+  padding-block: 6px 26px;
   touch-action: pan-y;
   cursor: grab;
   animation-timing-function: linear;
@@ -1452,10 +1548,31 @@ body::before {
 }
 
 .testimonial-card {
-  background: var(--nv-bg);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 24%);
+  background-color: var(--nv-bg);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, rgba(13, 13, 15, 0.55) 0%, rgba(13, 13, 15, 0.9) 100%), url("/images/texture-graphite.jpg");
+  background-size: auto, auto, cover;
   border: 1px solid var(--nv-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 14px 30px rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 16px 32px rgba(0, 0, 0, 0.42);
+}
+
+/* Thin red light along the top edge — the card's one accent. */
+.testimonial-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(225, 6, 19, 0), rgba(225, 6, 19, 0.65), rgba(225, 6, 19, 0));
+}
+
+.testimonial-quote-mark {
+  color: var(--nv-red);
+}
+
+.testimonial-divider {
+  background: linear-gradient(90deg, var(--nv-border), rgba(36, 36, 40, 0));
 }
 
 .testimonial-avatar {
@@ -1529,9 +1646,48 @@ body::before {
   }
 }
 
-/* LocationSection — contact rows + embedded map widget. */
+/*
+ * LocationSection — info card over the generated topographic texture, and a
+ * map re-tinted to the dark palette (invert + hue-rotate keeps the red pin red).
+ */
+.location-card {
+  background: var(--nv-bg);
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 44px rgba(0, 0, 0, 0.4);
+}
+
+.location-card-bg {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg, rgba(13, 13, 15, 0.3) 0%, rgba(13, 13, 15, 0.92) 72%),
+    url("/images/texture-topo.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.location-badge {
+  color: var(--nv-text);
+  background: rgba(225, 6, 19, 0.1);
+  border: 1px solid rgba(225, 6, 19, 0.35);
+}
+
+.location-badge-dot {
+  background: var(--nv-red-bright);
+  box-shadow: 0 0 0 3px rgba(241, 13, 24, 0.18);
+}
+
+.location-rows > li + li {
+  border-top: 1px solid var(--nv-border);
+}
+
+.location-row-icon {
+  color: var(--nv-red-bright);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--nv-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .location-contact-row {
-  width: fit-content;
   transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -1542,13 +1698,17 @@ body::before {
 }
 
 .location-map {
-  position: relative;
-  min-height: 280px;
   background: var(--nv-bg);
+  border: 1px solid var(--nv-border);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.4);
 }
 
 .location-map iframe {
   border: 0;
   display: block;
-  filter: grayscale(0.15) contrast(1.05);
+  filter: invert(0.9) hue-rotate(180deg) saturate(0.55) contrast(0.92);
+}
+
+.location-map-frame {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 0 70px rgba(9, 9, 11, 0.55);
 }
